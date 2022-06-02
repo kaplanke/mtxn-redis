@@ -15,7 +15,7 @@ let host: string;
 let port: number;
 const redisServer = new RedisMemoryServer();
 
-describe("Multiple transaction manager Sequelize workflow test...", () => {
+describe("Multiple transaction manager Redis workflow test...", () => {
 
     beforeAll(async () => {
         global.console = require('console');
