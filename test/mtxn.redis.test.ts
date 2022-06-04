@@ -39,12 +39,11 @@ describe("Multiple transaction manager Redis workflow test...", () => {
         redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.set("theKey2", "theValue2"));
 
         // Add control step
-        redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.keys("*"));
+        const controlTask: Task = redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.keys("*"));
 
+        await txnMngr.exec();
 
-        const tasks: Task[] = await txnMngr.exec();
-
-        expect(tasks[2].getResult().length).toEqual(2);
+        expect(controlTask.getResult().length).toEqual(2);
 
         await client.disconnect();
 

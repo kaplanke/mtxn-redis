@@ -78,9 +78,10 @@ class RedisContext implements Context {
     }
 
     addFunctionTask(txnMngr: MultiTxnMngr,
-        execFunc: (client: RedisClientType, txn: RedisClientMultiCommandType, task: Task) => RedisClientMultiCommandType) {
+        execFunc: (client: RedisClientType, txn: RedisClientMultiCommandType, task: Task) => RedisClientMultiCommandType): Task {
         const task = new RedisTask(this, execFunc);
         txnMngr.addTask(task);
+        return task;
     }
 }
 
