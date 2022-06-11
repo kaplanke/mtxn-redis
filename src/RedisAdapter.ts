@@ -38,6 +38,7 @@ class RedisContext implements Context {
                 this.txn?.exec().then(ret => {
                     this.txn = undefined;
                     ret.forEach((dat, idx) => (txnMngr.tasks[idx] as RedisTask).setResult(dat));
+                    this.logger.debug(this.getName() + " is committed.");
                     resolve(this)
                 }).catch((err) => {
                     reject(err);
@@ -54,6 +55,7 @@ class RedisContext implements Context {
                 try {
                     type RedisClientMultiCommandType = ReturnType<typeof this.client.multi>;
                     this.txn?.discard();
+                    this.logger.debug(this.getName() + " is rollbacked.");
                     this.txn = undefined;
                     resolve(this)
                 } catch (err) {
