@@ -1,15 +1,14 @@
+import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import log4js from "log4js";
-import { FunctionContext, MultiTxnMngr, Task } from "multiple-transaction-manager";
+import { MultiTxnMngr, Task } from "multiple-transaction-manager";
 import { createClient } from "redis";
 import RedisMemoryServer from "redis-memory-server";
-import { describe, test, beforeAll, expect, afterAll } from '@jest/globals';
 import { RedisContext } from "../src/index";
 
 log4js.configure({
     appenders: { 'out': { type: 'stdout' } },
     categories: { default: { appenders: ['out'], level: 'debug' } }
 });
-const logger = log4js.getLogger();
 
 let host: string;
 let port: number;
@@ -33,13 +32,13 @@ describe("Multiple transaction manager Redis workflow test...", () => {
         const redisContext = new RedisContext(client);
 
         // Add first step
-        redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.set("theKey1", "theValue1"));
+        redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.set("theKey1", "theValue1"));
 
         // Add second step
-        redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.set("theKey2", "theValue2"));
+        redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.set("theKey2", "theValue2"));
 
         // Add control step
-        const controlTask: Task = redisContext.addFunctionTask(txnMngr, (client, txn, task) => txn.keys("*"));
+        const controlTask: Task = redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.keys("*"));
 
         await txnMngr.exec();
 

@@ -53,7 +53,6 @@ class RedisContext implements Context {
                 reject("Cannot rollback. Context not initialised.");
             } else {
                 try {
-                    type RedisClientMultiCommandType = ReturnType<typeof this.client.multi>;
                     this.txn?.discard();
                     this.logger.debug(this.getName() + " is rollbacked.");
                     this.txn = undefined;
@@ -90,7 +89,7 @@ class RedisContext implements Context {
 class RedisTask implements Task {
 
     context: RedisContext;
-    rs: any | undefined;
+    rs: unknown | undefined;
     execFunc: (client: RedisClientType, txn: RedisClientMultiCommandType, task: Task) => RedisClientMultiCommandType;
 
     constructor(context: RedisContext,
@@ -106,9 +105,9 @@ class RedisTask implements Task {
     exec(): Promise<Task> {
         return new Promise<Task>((resolveTask, rejectTask) => {
             try {
-                let res: any = this.execFunc(this.getContext().client, this.getContext().getTransaction(), this);
+                const res: unknown = this.execFunc(this.getContext().client, this.getContext().getTransaction(), this);
                 if ((res as RedisClientMultiCommandType).exec)
-                    this.getContext().txn = res;
+                    this.getContext().txn = (res as RedisClientMultiCommandType);
                 else
                     this.rs = res;
                 resolveTask(this);
@@ -118,18 +117,14 @@ class RedisTask implements Task {
         });
     }
 
-    getResult(): any | undefined {
+    getResult(): unknown | undefined {
         return this.rs;
     }
 
-    setResult(res: any) {
+    setResult(res: unknown) {
         this.rs = res;
     }
 
-    params: any;
-    setParams(params: object) {
-        throw new Error("Method not implemented.");
-    }
 }
 
 export { RedisContext, RedisTask };
