@@ -25,20 +25,21 @@ describe("Multiple transaction manager Redis workflow test...", () => {
 
     test("Function task example", async () => {
 
-        // init manager
-        const txnMngr: MultiTxnMngr = new MultiTxnMngr();
         const client = createClient({ url: "redis://" + host + ":" + port });
         await client.connect();
-        const redisContext = new RedisContext(client);
+
+        // init manager & context
+        const txnMngr: MultiTxnMngr = new MultiTxnMngr();
+        const redisContext = new RedisContext(txnMngr, client);
 
         // Add first step
-        redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.set("theKey1", "theValue1"));
+        redisContext.addFunctionTask((_client, txn, _task) => txn.set("theKey1", "theValue1"));
 
         // Add second step
-        redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.set("theKey2", "theValue2"));
+        redisContext.addFunctionTask((_client, txn, _task) => txn.set("theKey2", "theValue2"));
 
         // Add control step
-        const controlTask: Task = redisContext.addFunctionTask(txnMngr, (_client, txn, _task) => txn.keys("*"));
+        const controlTask: Task = redisContext.addFunctionTask((_client, txn, _task) => txn.keys("*"));
 
         await txnMngr.exec();
 

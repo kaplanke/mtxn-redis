@@ -9,12 +9,14 @@ type RedisClientType = ReturnType<typeof createClient>;
 
 class RedisContext implements Context {
 
+    txnMngr: MultiTxnMngr;
     client: RedisClientType;
     txn: RedisClientMultiCommandType | undefined = undefined;
     contextId: string;
     logger = log4js.getLogger("MultiTxnMngr");
 
-    constructor(client: RedisClientType) {
+    constructor(txnMngr: MultiTxnMngr, client: RedisClientType) {
+        this.txnMngr = txnMngr;
         this.client = client;
         this.contextId = v1();
     }
@@ -30,14 +32,15 @@ class RedisContext implements Context {
         });
     }
 
-    commit(txnMngr: MultiTxnMngr): Promise<Context> {
+    commit(): Promise<Context> {
         return new Promise((resolve, reject) => {
             if (!this.isInitialized()) {
                 reject("Cannot commit. Context not initialised.");
             } else {
                 this.txn?.exec().then(ret => {
                     this.txn = undefined;
-                    ret.forEach((dat, idx) => (txnMngr.tasks[idx] as RedisTask).setResult(dat));
+                    const tasksOfContext = this.txnMngr.tasks.filter((task) => task.getContext().getName() === this.getName())
+                    ret.forEach((dat, idx) => (tasksOfContext[idx] as RedisTask).setResult(dat));
                     this.logger.debug(this.getName() + " is committed.");
                     resolve(this)
                 }).catch((err) => {
@@ -78,10 +81,10 @@ class RedisContext implements Context {
         return this.txn;
     }
 
-    addFunctionTask(txnMngr: MultiTxnMngr,
+    addFunctionTask(
         execFunc: (client: RedisClientType, txn: RedisClientMultiCommandType, task: Task) => RedisClientMultiCommandType): Task {
         const task = new RedisTask(this, execFunc);
-        txnMngr.addTask(task);
+        this.txnMngr.addTask(task);
         return task;
     }
 }
@@ -117,7 +120,7 @@ class RedisTask implements Task {
         });
     }
 
-    getResult(): unknown | undefined {
+    getResult() {
         return this.rs;
     }
 
